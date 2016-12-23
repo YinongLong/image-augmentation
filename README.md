@@ -7,7 +7,7 @@
 
   其中主要是五种图片的扩充方法
 
-  1. 滑动窗口移动截取
+  **滑动窗口移动截取**
   - translation(fp, save_dir, width, height, stride=1)
 
     fp: 待扩充图片的路径（str）
@@ -19,13 +19,15 @@
     height: 滑动窗口的高度（像素）（int）
 
     stride: 滑动窗口滑动的步长（像素）（int）
-  2. 水平翻折
+
+  **水平翻折**
   - flip_left_right(fp, save_dir)
 
       fp: 待扩充图片的路径（str）
 
       save_dir: 扩充结果图片的存储目录（str）
-  3. 指定间隔角度旋转
+
+  **指定间隔角度旋转**
   - rotation(fp, save_dir, delta_angle)
 
       fp: 待扩充图片的路径（str）
@@ -33,7 +35,8 @@
       save_dir: 扩充结果图片的存储目录（str）
 
       delta_angle: 旋转的间隔角度大小（度）
-  4. RGB 像素值的上下浮动
+
+  **RGB 像素值的上下浮动**
   - pixel_variation(fp, save_dir, bound, positive=True)
 
       fp: 待扩充图片的路径（str）
@@ -43,7 +46,8 @@
       bound: RGB值浮动的边界，浮动结果为（1-bound）包含bound
 
       positive: 标志正向浮动还是负向浮动，True 表示正向，即加
-  5. fancy PCA
+
+  **fancy PCA**
   - fancyPCA(fp, save_dir, num)
 
     fp: 待扩充图片的路径（str）
