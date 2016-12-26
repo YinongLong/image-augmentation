@@ -10,12 +10,15 @@ Created on Wed Dec 21 20:36:01 2016
 1. 滑动截取扩展
 2. 旋转扩展
 3. RGB 浮动扩展
+4. fancy PCA
 
 """
 from __future__ import print_function
 from __future__ import division
 
 from PIL import Image
+
+import cv2
 
 import os
 
@@ -37,29 +40,39 @@ def _split_image_name(image_file_path):
     image_name = image_name.split('_')[0]
     return image_name, extension
     
-def fancyPCA(fp, save_dir, num):
+def _get_max_name(dir_path):
+    """
+    获取生成图片文件夹下最大的文件名
+    """
+    assert os.path.exists(dir_path), '%s directory is not exist!' % dir_path
+    eles = os.listdir(dir_path)
+    eles.sort()
+    temp_name = eles[-1]
+    if not temp_name.startswith('.'):
+        num = temp_name.split('.')[0].split('_')[1]
+        while num.startswith('0'):
+            num = num[1:]
+    else:
+        num = None
+    return num
+    
+def fancyPCA(fp, num):
     """
     对图像进行fancyPCA进行扩充
     
     fp: str
         图像存储的位置
         
-    save_dir: str
-        扩充的图像保存的根目录
-        
     num: int
         每张图片扩充的个数
     """
-    assert os.path.isfile(fp), '图像不存在！'
+    assert os.path.isfile(fp), 'The image file is not exist!'
     
-    operation_dir = 'fancyPCA'
-    save_dir = os.path.join(save_dir, operation_dir)
-    
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+    save_dir, _ = os.path.split(fp)
     
     image = Image.open(fp)
     image_name, extension = _split_image_name(fp)
+    
     image_width = image.width
     image_height = image.height
     
@@ -70,16 +83,19 @@ def fancyPCA(fp, save_dir, num):
     image_data -= data_mean
     # 计算协方差矩阵
     covariance = np.dot(image_data.T, image_data) / (image_data.shape[0]-1)
-    assert covariance.shape == (3, 3), '计算出现问题！'
+    assert covariance.shape == (3, 3), 'dimension number is not correct!'
     eigen_val, eigen_vect = np.linalg.eig(covariance)
-    for i in range(num):
+    
+    count = int(_get_max_name(save_dir)) + 1
+    
+    for _ in range(num):
         alpha = np.random.normal(loc=0.0, scale=0.1, size=(3,))
         weights = alpha * eigen_val
         addition = np.dot(eigen_vect, weights.reshape((-1, 1)))
         
         path = _construct_path(save_dir,
                                image_name,
-                               i+1,
+                               count,
                                extension)
         # 生成扩充的图像
         _support(image,
@@ -89,6 +105,8 @@ def fancyPCA(fp, save_dir, num):
                  image_width,
                  image_height,
                  path)
+        
+        count += 1
     image.close()
     print('fancy PCA 扩充完成！')
     
@@ -109,7 +127,7 @@ def _support(img, r_num, g_num, b_num, width, height, path):
             sub_img.putpixel((i, j), tuple(pixel))
     sub_img.save(path)
     
-def pixel_variation(fp, save_dir, bound, positive=True):
+def pixel_variation(fp, bound, positive=True):
     """
     对图片的像素进行正向或者负向的浮动
     
@@ -118,22 +136,16 @@ def pixel_variation(fp, save_dir, bound, positive=True):
     fp: str
         图片存储的路径
         
-    save_dir: str
-        扩展图片存储的根目录
-        
     bound: int
         像素值的浮动范围
         
     positive: bool
         指定像素值浮动的方向，正向或者负向
     """
-    assert os.path.isfile(fp), '图片文件不存在！'
+    assert os.path.isfile(fp), 'The image file is not exist!'
     
-    operation_dir = 'pixel_variation'
-    save_dir = os.path.join(save_dir, operation_dir)
+    save_dir, _ = os.path.split(fp)
     
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
     
     image = Image.open(fp)
     
@@ -147,13 +159,13 @@ def pixel_variation(fp, save_dir, bound, positive=True):
     else:
         sign = -1
         
-    image_count = 1
+    count = int(_get_max_name(save_dir)) + 1
     for i in range(1, bound+1):
         for j in range(1, bound+1):
             for k in range(1, bound+1):
                 path = _construct_path(save_dir,
                                    image_name,
-                                   image_count,
+                                   count,
                                    extension)
                 # 生成图像存储
                 _support(image, 
@@ -163,11 +175,11 @@ def pixel_variation(fp, save_dir, bound, positive=True):
                          image_width,
                          image_height,
                          path)
-                image_count += 1
+                count += 1
     image.close()
     print('像素浮动扩展结束！')
     
-def rotation(fp, save_dir, delta_angle):
+def rotation(fp, delta_angle):
     """
     对指定的图片进行旋转进行扩展
     
@@ -176,28 +188,25 @@ def rotation(fp, save_dir, delta_angle):
     fp: str
         指定进行扩展的图片的路径
         
-    save_dir: str
-        保存生成图片的根目录
-        
     delta_angle: float
         每次旋转的角度的大小
         
     clockwise: bool, default: False
         指定旋转是按照顺时针或者是逆时针，默认为逆时针
     """
-    assert os.path.isfile(fp), '图片文件不存在！'
+    assert os.path.isfile(fp), 'The image file is not exist!'
     
-    operation_dir = 'rotation'
-    save_dir = os.path.join(save_dir, operation_dir)
+    save_dir, _ = os.path.split(fp)
     
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+    count = int(_get_max_name(save_dir)) + 1
     
     image = Image.open(fp)
     
     image_name, extension = _split_image_name(fp)
-    count = 1
-    angle = count * delta_angle
+    
+    step = 1
+    angle = step * delta_angle
+    
     while angle <= 360:
         sub_image = image.rotate(angle)
         sub_image.save(_construct_path(save_dir,
@@ -205,11 +214,12 @@ def rotation(fp, save_dir, delta_angle):
                                        count,
                                        extension))
         count += 1
-        angle = count * delta_angle
+        step += 1
+        angle = step * delta_angle
     image.close()
     print('图片的旋转扩展结束！')
     
-def flip_left_right(fp, save_dir):
+def flip_left_right(fp):
     """
     对指定的图片文件进行水平的对折
     
@@ -217,17 +227,12 @@ def flip_left_right(fp, save_dir):
     ----------
     fp: str
         指定进行扩展的图片的路径
-        
-    save_dir: str
-        生成图片的存储目录
     """
-    assert os.path.isfile(fp), '图片文件不存在！'
+    assert os.path.isfile(fp), 'The image file is not exist!'
     
-    operation_dir = 'flip_left_right'
-    save_dir = os.path.join(save_dir, operation_dir)
+    save_dir, _ = os.path.split(fp)
     
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+    count = int(_get_max_name(save_dir)) + 1
     
     image = Image.open(fp)
     new_image = image.transpose(Image.FLIP_LEFT_RIGHT)
@@ -235,12 +240,12 @@ def flip_left_right(fp, save_dir):
     image_name, extension = _split_image_name(fp)
     new_image.save(_construct_path(save_dir,
                                    image_name,
-                                   1,
+                                   count,
                                    extension))
     image.close()
     print('水平对折扩展结束！')
 
-def translation(fp, save_dir, width, height, stride=1):
+def translation(fp, width, height, stride=1):
     """
     对图片进行滑动窗口平移扩展
     
@@ -248,9 +253,6 @@ def translation(fp, save_dir, width, height, stride=1):
     ----------
     fp: str
         指定图片存储的路径
-        
-    save_dir: str
-        所有改种扩充的图片存储的根目录
         
     width: int
         滑动窗口的宽度，必须小于等于图片本身的宽度
@@ -261,39 +263,32 @@ def translation(fp, save_dir, width, height, stride=1):
     stride: int
         滑动窗口移动的步幅大小
     """
-    assert os.path.isfile(fp), '图片文件不存在！'
+    assert os.path.isfile(fp), 'The image file is not exist!'
     
-    operation_dir = 'translation'
-    save_dir = os.path.join(save_dir, operation_dir)
+    save_dir, _ = os.path.split(fp)
     
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
+    image = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
     
-    image = Image.open(fp)
-    image_width = image.width
-    image_height = image.height
-    assert (image_width >= width and 
-            image_height >= height and
-            width > 0 and
-            height > 0), '设置的参数不合适！'
-    
+    image_width = image.shape[0]
+    image_height = image.shape[1]
+            
     image_name, extension = _split_image_name(fp)
     
     upper = 0; lower = height
-    count = 1
-    while lower <= image_height + 1:
+    
+    count = int(_get_max_name(save_dir)) + 1
+    
+    while lower <= image_height:
         left = 0; right = width
-        while right <= image_width + 1:
-            box_bound = (left, upper, right, lower)
-            sub_image = image.crop(box_bound)
-            
-            sub_image.save(_construct_path(save_dir,
-                                          image_name,
-                                          count,
-                                          extension))
+        while right <= image_width:
+            sub_image = image[upper:lower, left:right]
+            save_path = _construct_path(save_dir,
+                                        image_name,
+                                        count,
+                                        extension)
+            cv2.imwrite(save_path, sub_image)
             count += 1
             left += stride
             right += stride
         upper += stride; lower += stride
-    image.close()
     print('滑动窗平移扩展结束！')
