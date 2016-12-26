@@ -15,8 +15,6 @@ import os
 # 待扩充的数据存储位置
 source_dir = '/Users/Yinong/Downloads/data_augmentation/BCtypes_Tongue'
 
-# 扩充后的数据存储的位置
-save_dir = '/Users/Yinong/Downloads/data_augmentation/augmentation'
 
 def generate_images(image_list):
     """
@@ -26,26 +24,20 @@ def generate_images(image_list):
         print('正在处理图像', image_path)
         # 滑动窗口截取操作
         image_expandation.translation(fp=image_path,
-                                      save_dir=save_dir,
-                                      width=64,
-                                      height=64,
+                                      width=131,
+                                      height=131,
                                       stride=4)
         # 水平反转操作
-        image_expandation.flip_left_right(fp=image_path,
-                                          save_dir=save_dir)
+        image_expandation.flip_left_right(fp=image_path)
         # 旋转操作
         image_expandation.rotation(fp=image_path,
-                                   save_dir=save_dir,
-                                   delta_angle=30)
+                                   delta_angle=360)
         # 像素浮动操作
         image_expandation.pixel_variation(fp=image_path,
-                                          save_dir=save_dir,
-                                          bound=5,
+                                          bound=1,
                                           positive=True)
         # fancy PCA操作扩充
-        image_expandation.fancyPCA(fp=image_path,
-                                   save_dir=save_dir,
-                                   num=10)
+        image_expandation.fancyPCA(fp=image_path, num=10)
     print('所有扩充操作完成！')
 
 def get_all_image(dir_path):
