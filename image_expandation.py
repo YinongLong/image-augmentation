@@ -18,8 +18,6 @@ from __future__ import division
 
 from PIL import Image
 
-import cv2
-
 import os
 
 import numpy as np
@@ -108,7 +106,7 @@ def fancyPCA(fp, num):
         
         count += 1
     image.close()
-    print('fancy PCA 扩充完成！')
+    print(u'fancy PCA 扩充完成！')
     
 def _support(img, r_num, g_num, b_num, width, height, path):
     """
@@ -177,7 +175,7 @@ def pixel_variation(fp, bound, positive=True):
                          path)
                 count += 1
     image.close()
-    print('像素浮动扩展结束！')
+    print(u'像素浮动扩展结束！')
     
 def rotation(fp, delta_angle):
     """
@@ -217,7 +215,7 @@ def rotation(fp, delta_angle):
         step += 1
         angle = step * delta_angle
     image.close()
-    print('图片的旋转扩展结束！')
+    print(u'图片的旋转扩展结束！')
     
 def flip_left_right(fp):
     """
@@ -243,7 +241,7 @@ def flip_left_right(fp):
                                    count,
                                    extension))
     image.close()
-    print('水平对折扩展结束！')
+    print(u'水平对折扩展结束！')
 
 def translation(fp, width, height, stride=1):
     """
@@ -267,10 +265,10 @@ def translation(fp, width, height, stride=1):
     
     save_dir, _ = os.path.split(fp)
     
-    image = cv2.imread(fp, cv2.IMREAD_UNCHANGED)
+    image = Image.open(fp)
     
-    image_width = image.shape[0]
-    image_height = image.shape[1]
+    image_width = image.width
+    image_height = image.height
             
     image_name, extension = _split_image_name(fp)
     
@@ -281,14 +279,19 @@ def translation(fp, width, height, stride=1):
     while lower <= image_height:
         left = 0; right = width
         while right <= image_width:
-            sub_image = image[upper:lower, left:right]
+            box = (left, upper, right, lower)
+            
+            sub_image = image.crop(box)
+            
             save_path = _construct_path(save_dir,
                                         image_name,
                                         count,
                                         extension)
-            cv2.imwrite(save_path, sub_image)
+            
+            sub_image.save(save_path)
+            
             count += 1
             left += stride
             right += stride
         upper += stride; lower += stride
-    print('滑动窗平移扩展结束！')
+    print(u'滑动窗平移扩展结束！')

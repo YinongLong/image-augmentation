@@ -38,7 +38,7 @@ def generate_images(image_list):
                                           positive=True)
         # fancy PCA操作扩充
         image_expandation.fancyPCA(fp=image_path, num=10)
-    print('所有扩充操作完成！')
+    print(u'所有扩充操作完成！')
 
 def get_all_image(dir_path):
     """
